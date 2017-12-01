@@ -1,7 +1,20 @@
 buildscript {
     ext { springBootVersion = '1.5.2.RELEASE' }
-    repositories { mavenCentral() }
-    dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") }
+    repositories {
+        mavenCentral()
+        maven { url "https://nexus.comcast.com/nexus/content/groups/public" }
+        //google java format repo
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+      classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+
+      classpath('se.transmode.gradle:gradle-docker:1.2')
+      classpath("ru.vyarus:gradle-quality-plugin:2.2.0")
+      classpath("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.6")
+      classpath("gradle.plugin.com.avast.gradle:docker-compose-gradle-plugin:0.3.27")
+
+    }
 }
 
 apply plugin: 'java'
@@ -9,6 +22,8 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
+apply plugin: 'docker'
+
 
 jar {
     baseName = 'configuration-client'
@@ -17,13 +32,74 @@ jar {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-repositories { mavenCentral() }
+repositories {
+  mavenCentral()
+  maven { url "https://nexus.comcast.com/nexus/content/groups/public" }
+  maven { url "https://s3-us-west-2.amazonaws.com/dynamodb-local/release" }
+}
+
 
 dependencies {
     compile('org.springframework.cloud:spring-cloud-starter-config')
     compile('org.springframework.boot:spring-boot-starter-actuator')
     compile('org.springframework.boot:spring-boot-starter-web')
     testCompile('org.springframework.boot:spring-boot-starter-test')
+
+    // 3rd party
+    compile('joda-time:joda-time:2.9.9')
+    compile('commons-lang:commons-lang:2.6')
+
+    // Retrofit - RxJava
+    compile('com.squareup.retrofit2:retrofit:2.0.2')
+    compile('com.squareup.retrofit2:adapter-rxjava:2.0.2')
+    compile('com.squareup.retrofit2:converter-jackson:2.0.2') {
+        exclude group: 'com.fasterxml.jackson'
+    }
+    compile('com.squareup.retrofit2:converter-scalars:2.0.2')
+    compile('com.squareup.retrofit2:converter-simplexml:2.0.2')
+    compile('com.squareup.okhttp3:logging-interceptor:3.2.0')
+    compile('commons-io:commons-io:2.4')
+    compile('com.squareup.okhttp3:okhttp:3.0.0-RC1')
+    compile('io.reactivex:rxjava:1.1.9')
+    compile('io.reactivex:rxjava-string:1.1.0')
+
+    // Swagger
+    compile('io.springfox:springfox-swagger2:2.5.0')
+    compile('io.springfox:springfox-swagger-ui:2.5.0')
+    compile('com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.6.4')
+
+    // Sleuth - Zipkin for distributed tracing
+    compile('org.springframework.cloud:spring-cloud-starter-sleuth:1.2.1.RELEASE')
+    compile('org.springframework.cloud:spring-cloud-starter-zipkin:1.2.1.RELEASE')
+
+    //Comcast Core Library to publish metrics to InfluxDB
+    compile('com.comcast.home.mw:xh-mw-influxdb-spring-boot-starter:0.0.7')
+
+    //AWS DynamoDB SDK
+    compile('com.amazonaws:aws-java-sdk-dynamodb:1.11.197')
+
+    // Test
+    testCompile('junit:junit:4.12')
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile('org.mockito:mockito-core:2.0.44-beta')
+    testCompile('net.logstash.logback:logstash-logback-encoder:4.8')
+    testCompile("com.almworks.sqlite4java:sqlite4java:1.0.392")
+    testCompile("com.almworks.sqlite4java:libsqlite4java-osx:1.0.392")
+    testCompile('com.amazonaws:DynamoDBLocal:1.11.86')
+        //{exclude group: 'org.apache.logging.log4j', module: 'log4j-core'}
+    testCompile('com.almworks.sqlite4java:sqlite4java-win32-x86:1.0.392')
+    testCompile('com.almworks.sqlite4java:sqlite4java-win32-x64:1.0.392')
+    testCompile('com.almworks.sqlite4java:libsqlite4java-linux-i386:1.0.392')
+    testCompile('com.almworks.sqlite4java:libsqlite4java-linux-amd64:1.0.392')
+
+    //Jasypt for password encrpytion
+    //compile('com.github.ulisesbocchio:jasypt-spring-boot-starter:1.12') { exclude group: 'org.slf4j'}
+
+    // Wiremock
+    testCompile('com.github.tomakehurst:wiremock-standalone:2.6.0')
+    testCompile('com.jayway.restassured:rest-assured:2.8.0')
+
+
 }
 
 dependencyManagement {
@@ -39,4 +115,3 @@ eclipse {
         containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8'
     }
 }
-
