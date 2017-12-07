@@ -1,0 +1,64 @@
+# Docker compose file for running config server
+version: '2'
+services:
+  consulserver:
+    image: paas/consulserver
+    ports:
+      - "8300:8300"
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+    environment:
+      - CONSUL_LOCAL_CONFIG=${CONSUL_LOCAL_CONFIG}
+    networks:
+      - mtrnet
+  grafana:
+    image: csmiley/grafana-graphite
+    ports:
+      - "8070:80"
+      - "8071:81"
+      - "2003:2003"
+      - "2003:2003/udp"
+      - "2004:2004"
+      - "8125:8125/udp"
+      - "8126:8126"
+    command: bash -c "ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && /usr/bin/supervisord"
+    networks:
+      - mtrnet
+  dataelk:
+    image: busybox
+    volumes:
+      - /data
+    networks:
+      - mtrnet
+
+  dynamodb:
+    image: dwmkerr/dynamodb
+    ports:
+      - "8000:8000"
+    networks:
+      - mtrnet
+
+  configserver:
+    container_name: configserver
+    image: philly2017/config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - mtrnet
+
+  configclient:
+    container_name: configclient
+    image: philly2017/configuration-client
+    ports:
+      - "8080:8080"
+    environment:
+      - spring.cloud.config.uri=http://configserver:8888
+    depends_on:
+      - configserver
+    networks:
+      - mtrnet
+
+networks:
+  mtrnet:
+    driver: bridge
